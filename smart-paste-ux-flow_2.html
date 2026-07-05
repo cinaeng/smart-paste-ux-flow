@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>스마트 붙여넣기 배송지 입력 — 1단계(룰 기반) UX 플로우</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<style>
+  :root{
+    --black:#111;
+    --gray9:#333;--gray6:#767676;--gray4:#b0b0b0;--gray2:#e5e5e5;--gray1:#f5f5f5;
+    --accent:#ff4800; /* 퀵픽스 하이라이트용 (프로토 주석 색) */
+    --ok:#0d8a4f;
+    --warn:#c77700;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Pretendard Variable",Pretendard,-apple-system,sans-serif;background:#fafafa;color:var(--black);-webkit-font-smoothing:antialiased}
+
+  .wrap{max-width:1120px;margin:0 auto;padding:40px 24px 80px}
+  header.page{margin-bottom:28px}
+  .eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--accent);text-transform:uppercase;margin-bottom:8px}
+  h1{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.3}
+  .sub{margin-top:8px;font-size:14px;color:var(--gray6);line-height:1.6}
+
+  /* step nav */
+  .stepnav{display:flex;gap:8px;flex-wrap:wrap;margin:28px 0 24px}
+  .stepnav button{
+    border:1px solid var(--gray2);background:#fff;border-radius:999px;
+    padding:8px 14px;font-size:13px;font-weight:600;color:var(--gray6);cursor:pointer;
+    font-family:inherit;transition:all .15s;
+  }
+  .stepnav button:hover{border-color:var(--gray4)}
+  .stepnav button.on{background:var(--black);border-color:var(--black);color:#fff}
+  .stepnav button.edge{border-style:dashed}
+  .stepnav button.edge.on{background:var(--warn);border-color:var(--warn)}
+
+  .stage{display:grid;grid-template-columns:390px 1fr;gap:36px;align-items:start}
+  @media (max-width:860px){.stage{grid-template-columns:1fr}}
+
+  /* phone */
+  .phone{
+    width:100%;max-width:390px;background:#fff;border:1px solid var(--gray2);
+    border-radius:36px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.08);
+    position:relative;
+  }
+  .statusbar{display:flex;justify-content:space-between;padding:14px 24px 6px;font-size:13px;font-weight:600;color:var(--gray9)}
+  .screen{padding:8px 20px 20px;min-height:640px;display:flex;flex-direction:column;position:relative}
+  .apphead{display:flex;justify-content:space-between;align-items:center;padding:10px 0 22px}
+  .apphead .title{font-size:19px;font-weight:700}
+  .apphead .x{font-size:20px;color:var(--gray9)}
+
+  .fld{margin-bottom:18px}
+  .fld label{display:block;font-size:14px;font-weight:700;margin-bottom:8px}
+  .fld label .opt{font-weight:400;color:var(--gray6)}
+  .input{
+    width:100%;border:1px solid var(--gray2);border-radius:8px;padding:13px 12px;
+    font-size:14px;color:var(--black);background:#fff;min-height:46px;display:flex;align-items:center;
+  }
+  .input.ph{color:var(--gray4)}
+  .input.filled{border-color:var(--black)}
+  .input.focusme{border-color:var(--accent);box-shadow:0 0 0 2px rgba(255,72,0,.12)}
+  .row{display:flex;gap:8px}
+  .btn-line{border:1px solid var(--black);border-radius:8px;padding:0 14px;font-size:14px;font-weight:600;display:flex;align-items:center;white-space:nowrap}
+  .cta{
+    margin-top:auto;background:var(--black);color:#fff;border:none;border-radius:10px;
+    padding:16px;font-size:15px;font-weight:700;width:100%;cursor:pointer;font-family:inherit;
+  }
+  .cta:disabled{background:var(--gray2);color:var(--gray4)}
+  .cta.ghost{background:#fff;color:var(--black);border:1px solid var(--gray2);margin-top:8px}
+
+  /* smart paste card */
+  .smart{
+    border:1.5px dashed var(--gray4);border-radius:12px;padding:14px;margin-bottom:22px;
+    background:var(--gray1);cursor:pointer;transition:border-color .15s;
+  }
+  .smart:hover{border-color:var(--black)}
+  .smart .st{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;margin-bottom:4px}
+  .smart .st .spark{color:var(--accent)}
+  .smart .sd{font-size:12.5px;color:var(--gray6);line-height:1.5}
+  .smart textarea{
+    width:100%;border:none;background:transparent;resize:none;font-family:inherit;
+    font-size:14px;line-height:1.55;margin-top:8px;outline:none;color:var(--black);
+  }
+  .smart.active{border-color:var(--black);background:#fff;border-style:solid}
+  .smart .parsebtn{
+    margin-top:10px;width:100%;background:var(--black);color:#fff;border:none;border-radius:8px;
+    padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
+  }
+
+  /* confirm sheet */
+  .dim{position:absolute;inset:0;background:rgba(0,0,0,.4);border-radius:0}
+  .sheet{
+    position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:20px 20px 0 0;
+    padding:22px 20px 20px;box-shadow:0 -8px 30px rgba(0,0,0,.15);
+  }
+  .sheet h3{font-size:17px;font-weight:800;margin-bottom:4px}
+  .sheet .hint{font-size:12.5px;color:var(--gray6);margin-bottom:16px}
+  .kv{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid var(--gray1)}
+  .kv:last-of-type{border-bottom:none}
+  .kv .k{width:64px;flex-shrink:0;font-size:13px;color:var(--gray6);padding-top:1px}
+  .kv .v{font-size:14px;font-weight:600;line-height:1.45;flex:1}
+  .kv .badge{font-size:11px;font-weight:700;border-radius:4px;padding:2px 6px;flex-shrink:0}
+  .badge.ok{color:var(--ok);background:#e8f6ef}
+  .badge.warn{color:var(--warn);background:#fdf3e3}
+  .kv .edit{font-size:12px;color:var(--gray6);text-decoration:underline;flex-shrink:0;padding-top:2px}
+
+  /* toast */
+  .toast{
+    position:absolute;left:20px;right:20px;bottom:96px;background:rgba(17,17,17,.92);color:#fff;
+    border-radius:10px;padding:13px 16px;font-size:13.5px;font-weight:500;line-height:1.5;
+  }
+
+  /* skeleton / loading */
+  .loading{display:flex;flex-direction:column;align-items:center;gap:14px;padding:60px 0}
+  .spin{width:28px;height:28px;border:3px solid var(--gray2);border-top-color:var(--black);border-radius:50%;animation:sp 0.8s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .loading p{font-size:13.5px;color:var(--gray6)}
+
+  /* annotation panel */
+  .anno h2{font-size:18px;font-weight:800;margin-bottom:4px;letter-spacing:-.01em}
+  .anno .stepno{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.08em;margin-bottom:6px}
+  .anno p.lead{font-size:14.5px;line-height:1.7;color:var(--gray9);margin-bottom:20px}
+  .card{background:#fff;border:1px solid var(--gray2);border-radius:12px;padding:18px;margin-bottom:12px}
+  .card h4{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--gray6);text-transform:uppercase;margin-bottom:10px}
+  .card ul{list-style:none}
+  .card li{font-size:13.5px;line-height:1.65;padding-left:16px;position:relative;margin-bottom:8px;color:var(--gray9)}
+  .card li:last-child{margin-bottom:0}
+  .card li::before{content:"";position:absolute;left:2px;top:9px;width:5px;height:5px;border-radius:50%;background:var(--black)}
+  .card.sys li::before{background:var(--accent)}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:var(--gray1);border-radius:4px;padding:1px 5px}
+  .nextprev{display:flex;gap:8px;margin-top:20px}
+  .nextprev button{
+    flex:1;border:1px solid var(--gray2);background:#fff;border-radius:10px;padding:12px;
+    font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--gray9);
+  }
+  .nextprev button.pri{background:var(--black);color:#fff;border-color:var(--black)}
+  .nextprev button:disabled{opacity:.35;cursor:default}
+  .tap{font-size:12px;color:var(--gray6);margin-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="stepnav" id="nav" style="margin-top:0"></nav>
+
+  <div class="stage">
+    <div class="phone">
+      <div class="statusbar"><span>9:15</span><span>5G ▮▮▮</span></div>
+      <div class="screen" id="screen"></div>
+    </div>
+    <aside class="anno" id="anno"></aside>
+  </div>
+</div>
+
+<script>
+const PASTE = "010-1234-5678 서울시 종로구 송월길 9 경희궁자이아파트 207동 2451호 홍길동 입니다. 감사해요!";
+
+const steps = [
+  {
+    id:0, nav:"① 진입", title:"진입 — 붙여넣기 유도",
+    lead:"기존 배송지 추가 폼 최상단에 스마트 입력 카드를 얹습니다. 기존 플로우는 그대로 두고, 지름길을 하나 추가하는 구조라 리스크가 없습니다.",
+    user:["배송지 추가 화면 진입","카톡·문자로 받은 주소 메시지를 복사해 온 상태"],
+    sys:["클립보드에 텍스트가 있으면 카드 문구를 <b>“복사한 내용 붙여넣기”</b>로 컨텍스트 전환 (iOS 클립보드 권한 정책 준수 — 자동 읽기 아닌 유저 탭 트리거)","카드 미사용 시 기존 수동 입력과 100% 동일"],
+    design:["신규 기능은 점선 카드로 ‘실험적 지름길’ 뉘앙스 부여, 기존 폼 위계는 유지","카드 하나 추가 외에 기존 화면 변경 없음 → 개발·QA 범위 최소화"]
+  },
+  {
+    id:1, nav:"② 붙여넣기", title:"붙여넣기 — 원문 그대로",
+    lead:"유저는 형식을 신경 쓰지 않고 받은 메시지를 통째로 붙여넣습니다. ‘입니다’, ‘감사해요’ 같은 잡음이 섞여 있어도 그대로 둡니다.",
+    user:["카드 탭 → 텍스트 영역 확장","메시지 원문 붙여넣기 → <b>자동으로 입력하기</b> 탭"],
+    sys:["입력 즉시 로컬에서 전화번호 패턴(<code>01[016789]-?\\d{3,4}-?\\d{4}</code>) 존재 여부만 가볍게 감지해 버튼 활성화","이 시점까지 서버 전송 없음 — 개인정보는 파싱 요청 1회에만 사용"],
+    design:["‘형식 없이 그냥 붙여넣으세요’가 핵심 약속 — placeholder에 실제 메시지 예시 노출","붙여넣기 직후 자동 파싱하지 않고 버튼을 한 번 누르게 함 (의도 확인)"]
+  },
+  {
+    id:2, nav:"③ 파싱", title:"파싱 & 주소 DB 매칭",
+    lead:"룰 기반 3단 파이프라인이 돕니다. 핵심은 주소를 ‘텍스트로 추출’하는 게 아니라 도로명주소 DB에 매칭시켜 우편번호까지 확정하는 것입니다.",
+    user:["대기 (평균 1초 미만 목표)"],
+    sys:["<b>1. 전화번호</b> — 정규식 추출 후 원문에서 제거","<b>2. 주소</b> — 잔여 텍스트를 도로명주소 검색 API(juso.go.kr)에 질의 → 매칭 성공 시 표준 주소 + 우편번호 확정. 매칭에 사용된 구간 제거","<b>3. 잔여 텍스트</b> — <code>동/호/층/-</code> 패턴 → 상세주소, 한글 2~4자 연속 토큰 → 이름 후보. ‘입니다·감사’ 등 스톱워드 제거"],
+    design:["로딩 문구로 시스템이 무엇을 하는지 표현 (“주소를 확인하고 있어요”) — 오배송 불안을 신뢰로 전환하는 첫 장치"]
+  },
+  {
+    id:3, nav:"④ 확인", title:"확인 바텀시트 — 오배송 방지 관문",
+    lead:"파싱 결과를 폼에 바로 꽂지 않고 반드시 확인을 거칩니다. 신뢰도가 높은 필드(주소 DB 매칭 성공)와 추정 필드(이름)를 시각적으로 구분합니다.",
+    user:["분류 결과 검토","의심 필드는 ‘수정’으로 즉시 인라인 편집","<b>이대로 입력하기</b> 탭"],
+    sys:["주소: DB 매칭 성공 → <b>확인됨</b> 배지","이름: 휴리스틱 추정 → <b>확인 필요</b> 배지로 주의 유도","‘수정’ 탭 시 해당 필드만 편집 모드 (시트 이탈 없음)"],
+    design:["이 화면이 기능 전체의 신뢰를 결정 — 오배송 리스크를 UX로 흡수하는 핵심 관문","배지 2단계(확인됨/확인 필요)로 유저의 검토 에너지를 의심 필드에만 집중시킴"]
+  },
+  {
+    id:4, nav:"⑤ 완료", title:"자동 입력 완료 — 저장",
+    lead:"확정된 값이 기존 폼에 그대로 채워집니다. 유저는 최종 화면에서 한 번 더 전체를 눈으로 확인하고 저장합니다.",
+    user:["채워진 폼 최종 확인","배송 요청사항(선택) 필요 시 선택 → <b>저장하기</b>"],
+    sys:["폼 채움과 동시에 토스트로 결과 요약 노출","파싱 원문은 저장하지 않고 즉시 폐기 (개인정보 최소 보관 원칙)"],
+    design:["‘마법처럼 끝’이 아니라 기존 폼으로 착지시켜 익숙한 저장 경험 유지","측정 지표: 배송지 입력 완료율, 입력 소요시간, 스마트 입력 사용률, 확인 시트 수정률"]
+  },
+  {
+    id:5, nav:"⚠ 실패 폴백", edge:true, title:"엣지 케이스 — 주소 매칭 실패",
+    lead:"주소 DB 매칭에 실패하면 조용히 기존 플로우로 착지시킵니다. 추출에 성공한 값(전화번호 등)은 버리지 않고 채워둡니다.",
+    user:["안내 확인 → 기존 <b>주소 찾기</b>로 이어서 진행"],
+    sys:["부분 성공 전략: 전화번호·이름 등 확정된 필드는 채우고, 실패한 주소만 수동 유도","실패 원문 패턴은 (비식별화 후) 로깅 → 파서 개선 및 2단계(LLM 폴백) 우선순위 판단 근거로 활용"],
+    design:["실패해도 유저가 잃는 것은 없음 — ‘시도 비용 제로’가 신규 기능 채택률의 전제","에러 문구는 사과가 아니라 다음 행동 안내: “주소를 찾지 못했어요. 주소 찾기로 입력해주세요.”"]
+  }
+];
+
+let cur = 0;
+const nav = document.getElementById('nav');
+const scr = document.getElementById('screen');
+const ann = document.getElementById('anno');
+
+function fld(label, val, opts={}){
+  const cls = ['input', val?'filled':'ph', opts.focus?'focusme':''].join(' ');
+  return `<div class="fld"><label>${label}${opts.opt?' <span class="opt">(선택)</span>':''}</label>
+    ${opts.row?`<div class="row"><div class="${cls}" style="flex:1">${val||opts.ph}</div><div class="btn-line">주소 찾기</div></div>`
+    :`<div class="${cls}">${val||opts.ph}</div>`}</div>`;
+}
+
+function baseForm(v={}, o={}){
+  return `
+  <div class="apphead"><span class="title">배송지 추가</span><span class="x">✕</span></div>
+  ${o.smart||''}
+  ${fld('이름', v.name, {ph:'받는 분의 이름을 입력해주세요'})}
+  ${fld('휴대폰번호', v.phone, {ph:'휴대폰번호를 입력해주세요.'})}
+  ${fld('주소', v.zip, {ph:'우편번호', row:true})}
+  ${fld('', v.addr, {ph:'주소'})}
+  ${fld('', v.detail, {ph:'상세주소', focus:o.focusDetail})}
+  ${fld('배송 요청사항', v.req, {ph:'배송 요청사항을 선택해주세요', opt:true})}
+  <button class="cta" ${v.name?'':'disabled'} onclick="${o.ctaAction||''}">저장하기</button>`;
+}
+
+const smartIdle = `
+  <div class="smart" onclick="go(1)">
+    <div class="st"><span class="spark">✦</span> 붙여넣기로 한 번에 입력</div>
+    <div class="sd">받은 메시지를 그대로 붙여넣으면 이름·연락처·주소를 자동으로 채워드려요.</div>
+  </div>`;
+
+const smartActive = `
+  <div class="smart active">
+    <div class="st"><span class="spark">✦</span> 붙여넣기로 한 번에 입력</div>
+    <textarea rows="3" readonly>${PASTE}</textarea>
+    <button class="parsebtn" onclick="go(2)">자동으로 입력하기</button>
+  </div>`;
+
+const parsed = {name:'홍길동', phone:'010-1234-5678', zip:'03165', addr:'서울 종로구 송월길 9 (경희궁자이아파트)', detail:'207동 2451호'};
+
+function renderScreen(){
+  if(cur===0){ scr.innerHTML = baseForm({}, {smart:smartIdle}); }
+  else if(cur===1){ scr.innerHTML = baseForm({}, {smart:smartActive}); }
+  else if(cur===2){
+    scr.innerHTML = baseForm({}, {smart:smartActive}) + `<div class="dim"></div>
+      <div class="sheet"><div class="loading"><div class="spin"></div><p>주소를 확인하고 있어요…</p></div></div>`;
+    setTimeout(()=>{ if(cur===2) go(3); }, 1400);
+  }
+  else if(cur===3){
+    scr.innerHTML = baseForm({}, {smart:smartActive}) + `<div class="dim"></div>
+      <div class="sheet">
+        <h3>이렇게 입력할까요?</h3>
+        <div class="hint">주소는 도로명주소로 확인했어요. 나머지 항목도 확인해주세요.</div>
+        <div class="kv"><span class="k">받는 분</span><span class="v">홍길동</span><span class="badge warn">확인 필요</span><span class="edit">수정</span></div>
+        <div class="kv"><span class="k">연락처</span><span class="v">010-1234-5678</span><span class="badge ok">확인됨</span></div>
+        <div class="kv"><span class="k">주소</span><span class="v">(03165) 서울 종로구 송월길 9<br>경희궁자이아파트</span><span class="badge ok">확인됨</span></div>
+        <div class="kv"><span class="k">상세주소</span><span class="v">207동 2451호</span><span class="edit">수정</span></div>
+        <button class="cta" style="margin-top:16px" onclick="go(4)">이대로 입력하기</button>
+        <button class="cta ghost" onclick="go(0)">직접 입력할게요</button>
+      </div>`;
+  }
+  else if(cur===4){
+    scr.innerHTML = baseForm(parsed, {ctaAction:"this.textContent='저장되었습니다 ✓'"}) +
+      `<div class="toast">4개 항목을 자동으로 입력했어요. 확인 후 저장해주세요.</div>`;
+    setTimeout(()=>{const t=scr.querySelector('.toast'); if(t) t.style.opacity=0, t.style.transition='opacity .5s';}, 2600);
+  }
+  else if(cur===5){
+    scr.innerHTML = baseForm({phone:'010-1234-5678'}, {smart:smartActive}) + `<div class="dim"></div>
+      <div class="sheet">
+        <h3>주소를 찾지 못했어요</h3>
+        <div class="hint">연락처는 입력해두었어요. 주소는 주소 찾기로 입력해주세요.</div>
+        <div class="kv"><span class="k">연락처</span><span class="v">010-1234-5678</span><span class="badge ok">확인됨</span></div>
+        <div class="kv"><span class="k">주소</span><span class="v" style="color:var(--gray4)">인식하지 못했어요</span><span class="badge warn">직접 입력</span></div>
+        <button class="cta" style="margin-top:16px" onclick="go(0)">주소 찾기로 입력하기</button>
+      </div>`;
+  }
+}
+
+function renderAnno(){
+  const s = steps[cur];
+  ann.innerHTML = `
+    <div class="stepno">STEP ${s.edge?'EDGE':cur+1} / ${steps.length-1}${s.edge?'':' + edge'}</div>
+    <h2>${s.title}</h2>
+    <p class="lead">${s.lead}</p>
+    <div class="card"><h4>유저 행동</h4><ul>${s.user.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+    <div class="card sys"><h4>시스템 로직</h4><ul>${s.sys.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+    <div class="card"><h4>디자인 의도</h4><ul>${s.design.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+    <div class="nextprev">
+      <button onclick="go(${Math.max(0,cur-1)})" ${cur===0?'disabled':''}>← 이전</button>
+      <button class="pri" onclick="go(${Math.min(steps.length-1,cur+1)})" ${cur===steps.length-1?'disabled':''}>다음 →</button>
+    </div>
+    <div class="tap">화면 속 검은 버튼을 직접 눌러도 플로우가 진행됩니다.</div>`;
+}
+
+function renderNav(){
+  nav.innerHTML = steps.map(s=>`<button class="${s.edge?'edge':''} ${s.id===cur?'on':''}" onclick="go(${s.id})">${s.nav}</button>`).join('');
+}
+
+function go(i){ cur=i; renderNav(); renderScreen(); renderAnno(); }
+go(0);
+</script>
+</body>
+</html>
